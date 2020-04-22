@@ -30,6 +30,7 @@ NOMINATIM_DB_WEB_USER=${NOMINATIM_DB_WEB_USER:-"nginx"}
 NOMINATIM_FLATNODE_ENABLE=${NOMINATIM_FLATNODE_ENABLE:-"false"}
 NOMINATIM_FLATNODE_FILE=${NOMINATIM_FLATNODE_FILE:-${NOMINATIM_DATA_DIR}"/flatnode.file"}
 NOMINATIM_LOCAL_FILE=${NOMINATIM_BUILD_DIR}"/settings/local.php"
+NOMINATIM_OSM2PGSQL_CACHE=${NOMINATIM_OSM2PGSQL_CACHE:-"2000"} #Megabytes
 NOMINATIM_PBF_DIR=${NOMINATIM_PBF_DIR:-${NOMINATIM_DATA_DIR}"/pbf"}
 NOMINATIM_PBF_IMPORT_FILE=""
 NOMINATIM_PBF_AFRICA_ENABLE=${NOMINATIM_PBF_AFRICA_ENABLE:-"false"}
@@ -390,7 +391,19 @@ function set_nominatim_pbf_import_file() {
 
 function run_nominatim_setup() {
   if [[ "x${NOMINATIM_PBF_IMPORT_FILE}" != "x" ]]; then
-    sudo -u $NOMINATIM_SYSTEM_USER $NOMINATIM_BUILD_DIR/utils/setup.php --osm-file $NOMINATIM_PBF_IMPORT_FILE --all --threads $NOMINATIM_THREADS 2>&1 | tee $NOMINATIM_DATA_DIR/setup.log
+    NOMINATIM_SETUP_OPTS="--all --threads ${NOMINATIM_THREADS}"
+    if [[ "x${NOMINATIM_FLATNODE_ENABLE}" == "xfalse" ]]; then
+      #Get size of PBF file in MB
+      PBF_IMPORT_SIZE=$(($( stat -c '%s' $NOMINATIM_PBF_IMPORT_FILE ) / 1000000))
+      if [[ $PBF_IMPORT_SIZE -lt $NOMINATIM_OSM2PGSQL_CACHE ]]; then
+        OSM2PGSQL_CACHE=$PBF_IMPORT_SIZE
+      else
+        OSM2PGSQL_CACHE=$NOMINATIM_OSM2PGSQL_CACHE
+      fi
+      NOMINATIM_SETUP_OPTS=$NOMINATIM_SETUP_OPTS" --osm2pgsql-cache ${OSM2PGSQL_CACHE}"
+    fi
+    echo "Running Nominatim setup: ${NOMINATIM_BUILD_DIR}/utils/setup.php --osm-file ${NOMINATIM_PBF_IMPORT_FILE} ${NOMINATIM_SETUP_OPTS}"
+    sudo -u $NOMINATIM_SYSTEM_USER $NOMINATIM_BUILD_DIR/utils/setup.php --osm-file $NOMINATIM_PBF_IMPORT_FILE $NOMINATIM_SETUP_OPTS 2>&1 | tee $NOMINATIM_DATA_DIR/setup.log
     grep -c "Setup finished" $NOMINATIM_DATA_DIR/setup.log | grep -q 1 && sudo -u $NOMINATIM_SYSTEM_USER touch $NOMINATIM_DATA_DIR/setup-finished.txt #HACK
     sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET fsync TO 'on'"
     sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET full_page_writes TO 'on'"
