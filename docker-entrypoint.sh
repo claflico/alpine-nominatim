@@ -18,13 +18,13 @@ NGINX_WORKER_PROCESSES=${NGINX_WORKER_PROCESSES:-${CPU_COUNT}}
 
 NOMINATIM_BUILD_DIR=${NOMINATIM_BUILD_DIR:-${NOMINATIM_HOME}"/build"}
 NOMINATIM_DATA_DIR=${NOMINATIM_DATA_DIR:-${NOMINATIM_HOME}"/data"}
-NOMINATIM_DATA_GB_POSTCODE_ENABLE=${NOMINATIM_DATA_GB_POSTCODE_ENABLE:-"true"} #false
+NOMINATIM_DATA_GB_POSTCODE_ENABLE=${NOMINATIM_DATA_GB_POSTCODE_ENABLE:-"false"} #false
 NOMINATIM_DATA_GB_POSTCODE_URL=${NOMINATIM_DATA_GB_POSTCODE_URL:-"https://www.nominatim.org/data/gb_postcode_data.sql.gz"}
 NOMINATIM_DATA_US_POSTCODE_ENABLE=${NOMINATIM_DATA_US_POSTCODE_ENABLE:-"true"}
 NOMINATIM_DATA_US_POSTCODE_URL=${NOMINATIM_DATA_US_POSTCODE_URL:-"https://www.nominatim.org/data/us_postcode_data.sql.gz"}
-NOMINATIM_DATA_WIKIPEDIA_ARTICLE_ENABLE=${NOMINATIM_DATA_WIKIPEDIA_ARTICLE_ENABLE:-"false"} #false
+NOMINATIM_DATA_WIKIPEDIA_ARTICLE_ENABLE=${NOMINATIM_DATA_WIKIPEDIA_ARTICLE_ENABLE:-"false"}
 NOMINATIM_DATA_WIKIPEDIA_ARTICLE_URL=${NOMINATIM_DATA_WIKIPEDIA_ARTICLE_URL:-"https://www.nominatim.org/data/wikipedia_article.sql.bin"}
-NOMINATIM_DATA_WIKIPEDIA_REDIRECT_ENABLE=${NOMINATIM_DATA_WIKIPEDIA_REDIRECT_ENABLE:-"false"} #false
+NOMINATIM_DATA_WIKIPEDIA_REDIRECT_ENABLE=${NOMINATIM_DATA_WIKIPEDIA_REDIRECT_ENABLE:-"false"}
 NOMINATIM_DATA_WIKIPEDIA_REDIRECT_URL=${NOMINATIM_DATA_WIKIPEDIA_REDIRECT_URL:-"https://www.nominatim.org/data/wikipedia_redirect.sql.bin"}
 NOMINATIM_DB_WEB_USER=${NOMINATIM_DB_WEB_USER:-"nginx"}
 NOMINATIM_FLATNODE_ENABLE=${NOMINATIM_FLATNODE_ENABLE:-"false"}
@@ -95,7 +95,6 @@ PHPFPM_STDOUT_FILE=${PHPFPM_STDOUT_FILE:-"/dev/stdout"}
 PHPFPM_USER=${PHPFPM_USER:-"nginx"}
 
 POSTGRES_CONF_FILE=${POSTGRES_CONF_FILE:-${PGDATA}"/postgresql.conf"}
-POSTGRES_CONF_IFEXISTS_FILE=${POSTGRES_CONF_IFEXISTS_FILE:-${PGDATA}"/postgresql-ifexists.conf"}
 POSTGRES_CONF_INCLUDE_FILE=${POSTGRES_CONF_INCLUDE_FILE:-${PGDATA}"/postgresql-include.conf"}
 POSTGRES_DATA_DIR=${PGDATA:-"/var/lib/postgresql/data"}
 POSTGRES_AUTOVACUUM_WORK_MEM=${POSTGRES_AUTOVACUUM_WORK_MEM:-"2GB"} #Nominatim install docs suggests 2GB
@@ -199,12 +198,11 @@ function config_postgres() {
   if [ ! -f $POSTGRES_CONF_FILE ]; then
     sudo -u postgres initdb -D $POSTGRES_DATA_DIR
     echo "listen_addresses='*'" >> $POSTGRES_CONF_FILE
-    echo "include_if_exists = '${POSTGRES_CONF_IFEXISTS_FILE}'" >> $POSTGRES_CONF_FILE
     echo "include = '${POSTGRES_CONF_INCLUDE_FILE}'" >> $POSTGRES_CONF_FILE
-    echo "fsync = off" >> $POSTGRES_CONF_IFEXISTS_FILE
-    echo "full_page_writes = off" >> $POSTGRES_CONF_IFEXISTS_FILE
     write_postgres_include_conf
     sudo -u postgres pg_ctl --silent start -D $POSTGRES_DATA_DIR
+    sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET fsync TO 'off'"
+    sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET full_page_writes TO 'off'"
   else
     write_postgres_include_conf
   fi
@@ -392,14 +390,14 @@ function set_nominatim_pbf_import_file() {
 
 function run_nominatim_setup() {
   if [[ "x${NOMINATIM_PBF_IMPORT_FILE}" != "x" ]]; then
-    sudo -u $NOMINATIM_SYSTEM_USER $NOMINATIM_BUILD_DIR/utils/setup.php --osm-file $NOMINATIM_PBF_IMPORT_FILE --all --threads $NOMINATIM_THREADS > $NOMINATIM_DATA_DIR/setup.log
+    sudo -u $NOMINATIM_SYSTEM_USER $NOMINATIM_BUILD_DIR/utils/setup.php --osm-file $NOMINATIM_PBF_IMPORT_FILE --all --threads $NOMINATIM_THREADS 2>&1 | tee $NOMINATIM_DATA_DIR/setup.log
     grep -c "Setup finished" $NOMINATIM_DATA_DIR/setup.log | grep -q 1 && sudo -u $NOMINATIM_SYSTEM_USER touch $NOMINATIM_DATA_DIR/setup-finished.txt #HACK
-    cat $NOMINATIM_DATA_DIR/setup.log
+    sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET fsync TO 'on'"
+    sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET full_page_writes TO 'on'"
   fi
 }
 
 function clean_nominatim_setup() {
-  rm -rf $POSTGRES_CONF_IFEXISTS_FILE
   if [ -f $NOMINATIM_PBF_DIR/import.osm.pbf ]; then
     rm -rf $NOMINATIM_PBF_DIR/import.osm.pbf
   fi
