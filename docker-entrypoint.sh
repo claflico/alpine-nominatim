@@ -29,6 +29,7 @@ NOMINATIM_DATA_WIKIPEDIA_REDIRECT_URL=${NOMINATIM_DATA_WIKIPEDIA_REDIRECT_URL:-"
 NOMINATIM_DB_WEB_USER=${NOMINATIM_DB_WEB_USER:-"nginx"}
 NOMINATIM_FLATNODE_ENABLE=${NOMINATIM_FLATNODE_ENABLE:-"false"}
 NOMINATIM_FLATNODE_FILE=${NOMINATIM_FLATNODE_FILE:-${NOMINATIM_DATA_DIR}"/flatnode.file"}
+NOMINATIM_IMPORT_STYLE=${NOMINATIM_IMPORT_STYLE:-"import-full.style"}
 NOMINATIM_LOCAL_FILE=${NOMINATIM_BUILD_DIR}"/settings/local.php"
 NOMINATIM_OSM2PGSQL_CACHE=${NOMINATIM_OSM2PGSQL_CACHE:-"2000"} #Megabytes
 NOMINATIM_PBF_DIR=${NOMINATIM_PBF_DIR:-${NOMINATIM_DATA_DIR}"/pbf"}
@@ -247,9 +248,10 @@ function write_nominatim_local() {
   echo "@define('CONST_Postgis_Version', '${NOMINATIM_POSTGIS_VERSION}');" >> $NOMINATIM_LOCAL_FILE
   echo "@define('CONST_Website_BaseURL', '${NOMINATIM_WEBSITE_BASEURL}');" >> $NOMINATIM_LOCAL_FILE
   echo "@define('CONST_Database_Web_User', '${NOMINATIM_DB_WEB_USER}');" >> $NOMINATIM_LOCAL_FILE
-  if [[ "x${NOMINATIM_FLATNODE_ENABLE}" == "xtrue" ]]; then
-    echo "@define('CONST_Osm2pgsql_Flatnode_File', '${NOMINATIM_FLATNODE_FILE}');" >> $NOMINATIM_LOCAL_FILE
-  fi
+  echo "@define('CONST_Import_Style', CONST_BasePath.'/settings/${NOMINATIM_IMPORT_STYLE}');" >> $NOMINATIM_LOCAL_FILE
+#  if [[ "x${NOMINATIM_FLATNODE_ENABLE}" == "xtrue" ]]; then
+#    echo "@define('CONST_Osm2pgsql_Flatnode_File', '${NOMINATIM_FLATNODE_FILE}');" >> $NOMINATIM_LOCAL_FILE
+#  fi
   # If postgres host is used
   if [[ "x${NOMINATIM_POSTGRES_HOST}" != "x" ]]; then
     if [[ "x${NOMINATIM_POSTGRES_PORT}" != "x" ]] && [[ "x${NOMINATIM_POSTGRES_USER}" != "x" ]] && [[ "x${NOMINATIM_POSTGRES_PASSWORD}" != "x" ]] && [[ "x${NOMINATIM_POSTGRES_DB}" != "x" ]]; then
@@ -392,8 +394,8 @@ function set_nominatim_pbf_import_file() {
 
 function run_nominatim_setup() {
   if [[ "x${NOMINATIM_PBF_IMPORT_FILE}" != "x" ]]; then
-    NOMINATIM_SETUP_OPTS="--all --threads ${NOMINATIM_THREADS}"
-    if [[ "x${NOMINATIM_FLATNODE_ENABLE}" == "xfalse" ]]; then
+    NOMINATIM_SETUP_OPTS="--verbose --all --threads ${NOMINATIM_THREADS}"
+#    if [[ "x${NOMINATIM_FLATNODE_ENABLE}" == "xfalse" ]]; then
       #Get size of PBF file in MB
       PBF_IMPORT_SIZE=$(($( stat -c '%s' $NOMINATIM_PBF_IMPORT_FILE ) / 1000000))
       if [[ $PBF_IMPORT_SIZE -lt $NOMINATIM_OSM2PGSQL_CACHE ]]; then
@@ -402,7 +404,7 @@ function run_nominatim_setup() {
         OSM2PGSQL_CACHE=$NOMINATIM_OSM2PGSQL_CACHE
       fi
       NOMINATIM_SETUP_OPTS=$NOMINATIM_SETUP_OPTS" --osm2pgsql-cache ${OSM2PGSQL_CACHE}"
-    fi
+#    fi
     if [[ "x${NOMINATIM_REVERSE_ONLY_ENABLE}" == "xtrue" ]]; then
       NOMINATIM_SETUP_OPTS=$NOMINATIM_SETUP_OPTS" --reverse-only"
     fi
