@@ -109,8 +109,6 @@ function config_postgres() {
     echo "include = '${POSTGRES_CONF_INCLUDE_FILE}'" >> $POSTGRES_CONF_FILE
     write_postgres_include_conf
     sudo -u postgres pg_ctl --silent start -D $POSTGRES_DATA_DIR
-    sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET fsync TO 'off'"
-    sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET full_page_writes TO 'off'"
   else
     write_postgres_include_conf
   fi
@@ -319,6 +317,8 @@ function run_nominatim_setup() {
       NOMINATIM_SETUP_OPTS=$NOMINATIM_SETUP_OPTS" --reverse-only"
     fi
     echo "Running Nominatim setup: ${NOMINATIM_BUILD_DIR}/utils/setup.php --osm-file ${NOMINATIM_PBF_IMPORT_FILE} ${NOMINATIM_SETUP_OPTS}"
+    sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET fsync TO 'off'"
+    sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET full_page_writes TO 'off'"
     echo "Dropping Postgres DB: ${NOMINATIM_POSTGRES_DB}"
     sudo -u postgres psql postgres -c "DROP DATABASE IF EXISTS ${NOMINATIM_POSTGRES_DB}"
     sudo -u $NOMINATIM_SYSTEM_USER $NOMINATIM_BUILD_DIR/utils/setup.php --osm-file $NOMINATIM_PBF_IMPORT_FILE $NOMINATIM_SETUP_OPTS 2>&1 | tee $NOMINATIM_DATA_DIR/setup.log
