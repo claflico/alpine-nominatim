@@ -5,7 +5,7 @@ ENV NOMINATIM_VERSION 3.4.1
 WORKDIR /opt
 
 RUN set -x && \
-    apk add --update --no-cache boost-dev build-base bzip2-dev cmake curl expat-dev gettext-dev git libintl libxml2-dev musl-dev php postgresql-dev proj-dev zlib-dev && \
+    apk add --update --no-cache boost-dev build-base bzip2-dev cmake curl expat-dev gettext-dev git libintl libxml2-dev musl-dev php7 postgresql-dev proj-dev zlib-dev && \
     rm -rf /var/cache/apk/* && \
     git clone https://gitlab.com/rilian-la-te/musl-locales && \
 	cd musl-locales && cmake -DLOCALE_PROFILE=OFF -DCMAKE_INSTALL_PREFIX:PATH=/usr . && make && make install && \
@@ -31,7 +31,7 @@ ENV LANG=en_US.UTF-8 \
 
 RUN set -x && \
     apk update && apk upgrade && \
-    apk add --no-cache boost ca-certificates curl libintl nginx php7 php7-fpm php7-intl php7-json php7-opcache php7-openssl php7-pdo_pgsql php7-pear php7-pgsql postgis postgresql postgresql-contrib sudo supervisor tzdata && \
+    apk add --no-cache boost ca-certificates curl libintl nginx openssl php7 php7-fpm php7-intl php7-json php7-opcache php7-openssl php7-pdo_pgsql php7-pear php7-pgsql postgis postgresql postgresql-contrib sudo supervisor tzdata && \
     rm -rf /var/cache/apk/* && \
     rm /etc/nginx/conf.d/default.conf && \
     mkdir osmosis && \
@@ -41,21 +41,30 @@ RUN set -x && \
     mv bin/osmosis /usr/bin/ && \
     chmod a+x /usr/bin/osmosis && \
     cd .. && rm -rf osmosis* && \
+    mkdir /etc/nginx/ssl /opt/conf && \
     echo "Set disable_coredump false" >> /etc/sudo.conf && \
-    mkdir /run/postgresql && \
-    chown -R postgres:postgres /run/postgresql
+    mkdir -p /run/postgresql $PGDATA && \
+    chown -R postgres:postgres /run/postgresql $PGDATA
 
 COPY --from=claflico/alpine-osmium:1.11.1 \
      /usr/local/bin/osmium \
      /usr/bin/
 
+WORKDIR /opt
+
 COPY config/nginx.conf /etc/nginx/nginx.conf
-COPY docker-entrypoint.sh /
+COPY config/*.conf /opt/conf/
+COPY docker-entrypoint.sh .
+COPY variables.sh .
 COPY --from=build /usr/bin/locale /usr/bin/locale
 COPY --from=build /usr/share/locale /usr/share/locale
 COPY --from=build /usr/share/i18n /usr/share/i18n
 COPY --from=build /opt/nominatim $NOMINATIM_HOME
 
 EXPOSE 80
+EXPOSE 443
 
-CMD ["/docker-entrypoint.sh"]
+VOLUME /var/lib/postgresql/data
+VOLUME /opt/nominatim/data
+
+CMD ["/opt/docker-entrypoint.sh"]
