@@ -235,8 +235,6 @@ function check_region_pbf_file() {
       do
         BPF_FILE="${REGION}-latest.osm.pbf"
         BPF_URL=$BPF_REGION_URL/$BPF_FILE
-        echo $BPF_FILE
-        echo $BPF_URL
         if [ ! -f $NOMINATIM_PBF_DIR/$BPF_FILE ]; then
           download_pbf_file $BPF_URL $BPF_FILE
         fi
