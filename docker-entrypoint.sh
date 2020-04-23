@@ -57,6 +57,7 @@ function update_nginx_conf() {
     fi
     # Update SSL settings
     sed -i 's/NGINX_HTTPS_PORT/'"${NGINX_HTTPS_PORT}"'/' $NGINX_DEFAULT_CONF_FILE
+    sed -i 's/NGINX_SSL_CIPHERS/'"${NGINX_SSL_CIPHERS}"'/' $NGINX_DEFAULT_CONF_FILE
     sed -i 's/NGINX_SSL_CRT_FILE/'"${NGINX_SSL_CRT_FILE//\//\\/}"'/' $NGINX_DEFAULT_CONF_FILE
     sed -i 's/NGINX_SSL_KEY_FILE/'"${NGINX_SSL_KEY_FILE//\//\\/}"'/' $NGINX_DEFAULT_CONF_FILE
     sed -i 's/NGINX_SSL_PROTOCOLS/'"${NGINX_SSL_PROTOCOLS}"'/' $NGINX_DEFAULT_CONF_FILE
