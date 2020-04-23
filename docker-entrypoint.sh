@@ -134,7 +134,7 @@ function manage_nominatim_creds() {
   grep -c $NOMINATIM_SYSTEM_USER /etc/passwd | grep -q 1 || adduser -S -D -u $NOMINATIM_SYSTEM_UID -G $NOMINATIM_SYSTEM_USER $NOMINATIM_SYSTEM_USER
   # If postgres is local and is mounted volume users could have changed
   if [[ "x${NOMINATIM_POSTGRES_HOST}" == "x" ]]; then
-    if [ ! -f "${POSTGRES_DATA_DIR}/postmaster.pid" ]; then
+    if [ ! -f "${SUPERVISORD_PID_FILE}" ]; then
       sudo -u postgres pg_ctl --silent start -D $POSTGRES_DATA_DIR
     fi
     sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${NOMINATIM_SYSTEM_USER}'" | grep -q 1 || sudo -u postgres createuser -s $NOMINATIM_SYSTEM_USER
