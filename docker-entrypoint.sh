@@ -34,6 +34,15 @@ function update_nginx_conf() {
   sed -i 's/NGINX_STDERR_FILE/'"${NGINX_STDERR_FILE//\//\\/}"'/' $NGINX_CONF_FILE
   sed -i 's/NGINX_STDOUT_FILE/'"${NGINX_STDOUT_FILE//\//\\/}"'/' $NGINX_CONF_FILE
   sed -i 's/NGINX_KEEPALIVE_TIMEOUT/'"${NGINX_KEEPALIVE_TIMEOUT}"'/' $NGINX_CONF_FILE
+  if [ "${NGINX_HTTPS_ENABLE}" == "only" ]; then
+    cat $CONF_DIR/nginx-redirect.conf > $NGINX_DEFAULT_CONF_FILE
+    cat $CONF_DIR/nginx-https.conf >> $NGINX_DEFAULT_CONF_FILE
+  elif [ "${NGINX_HTTPS_ENABLE}" == "true" ]; then
+    cat $CONF_DIR/nginx-http.conf > $NGINX_DEFAULT_CONF_FILE
+    cat $CONF_DIR/nginx-https.conf >> $NGINX_DEFAULT_CONF_FILE
+  else
+    cat $CONF_DIR/nginx-http.conf > $NGINX_DEFAULT_CONF_FILE
+  fi
   sed -i 's/NGINX_HTTP_PORT/'"${NGINX_HTTP_PORT}"'/' $NGINX_DEFAULT_CONF_FILE
   sed -i 's/PHPFPM_LISTEN/'"${PHPFPM_LISTEN//\//\\/}"'/' $NGINX_DEFAULT_CONF_FILE
   sed -i 's/PHPFPM_PING_PATH/'"${PHPFPM_PING_PATH//\//\\/}"'/' $NGINX_DEFAULT_CONF_FILE
@@ -41,6 +50,17 @@ function update_nginx_conf() {
   sed -i 's/PHPFPM_STATUS_PATH/'"${PHPFPM_STATUS_PATH//\//\\/}"'/' $NGINX_DEFAULT_CONF_FILE
   sed -i 's/NGINX_ROOT_DIR/'"${NGINX_ROOT_DIR//\//\\/}"'/' $NGINX_DEFAULT_CONF_FILE
   sed -i 's/NGINX_SENDFILE/'"${NGINX_SENDFILE}"'/' $NGINX_DEFAULT_CONF_FILE
+  if [ "${NGINX_HTTPS_ENABLE}" == "true" ] || [ "${NGINX_HTTPS_ENABLE}" == "only" ]; then
+    # Create self-signed SSL certs if they don't exist
+    if [ ! -f $SELF_SSL_DIR/nominatim.key ] || [ ! -f $SELF_SSL_DIR/nominatim.crt ]; then
+      openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -subj "/C=CS/ST=ST/L=Nominatim/O=Nominatim/CN=nominatim" -keyout $SELF_SSL_DIR/nominatim.key  -out $SELF_SSL_DIR/nominatim.crt
+    fi
+    # Update SSL settings
+    sed -i 's/NGINX_HTTPS_PORT/'"${NGINX_HTTPS_PORT}"'/' $NGINX_DEFAULT_CONF_FILE
+    sed -i 's/NGINX_SSL_CRT_FILE/'"${NGINX_SSL_CRT_FILE//\//\\/}"'/' $NGINX_DEFAULT_CONF_FILE
+    sed -i 's/NGINX_SSL_KEY_FILE/'"${NGINX_SSL_KEY_FILE//\//\\/}"'/' $NGINX_DEFAULT_CONF_FILE
+    sed -i 's/NGINX_SSL_PROTOCOLS/'"${NGINX_SSL_PROTOCOLS}"'/' $NGINX_DEFAULT_CONF_FILE
+  fi
 }
 
 function write_supervisord_conf() {
