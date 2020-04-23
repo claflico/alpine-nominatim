@@ -292,6 +292,7 @@ function set_nominatim_pbf_import_file() {
     echo "More than one PBF file found. Merging..."
     sudo -u $NOMINATIM_SYSTEM_USER osmium cat $NOMINATIM_PBF_DIR/*.osm.pbf -o $NOMINATIM_PBF_DIR/import.osm.pbf
     NOMINATIM_PBF_IMPORT_FILE=$NOMINATIM_PBF_DIR/import.osm.pbf
+    echo "PBF merge complete!"
   elif [[ $PBF_COUNT -eq 1 ]]; then
     NOMINATIM_PBF_IMPORT_FILE=$NOMINATIM_PBF_DIR/$(ls ${NOMINATIM_PBF_DIR} | grep osm.pbf | grep -v md5)
   fi
