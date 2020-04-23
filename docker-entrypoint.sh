@@ -136,10 +136,14 @@ function manage_nominatim_creds() {
   grep -c $NOMINATIM_SYSTEM_USER /etc/passwd | grep -q 1 || adduser -S -D -u $NOMINATIM_SYSTEM_UID -G $NOMINATIM_SYSTEM_USER $NOMINATIM_SYSTEM_USER
   # If postgres is local and is mounted volume users could have changed
   if [[ "x${NOMINATIM_POSTGRES_HOST}" == "x" ]]; then
-    [ ! -f "${POSTGRES_DATA_DIR}/postmaster.pid" ] && sudo -u postgres pg_ctl --silent start -D $POSTGRES_DATA_DIR || echo "" #HACK
+    if [ ! -f "${POSTGRES_DATA_DIR}/postmaster.pid" ]; then
+      sudo -u postgres pg_ctl --silent start -D $POSTGRES_DATA_DIR
+    fi
     sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${NOMINATIM_SYSTEM_USER}'" | grep -q 1 || sudo -u postgres createuser -s $NOMINATIM_SYSTEM_USER
     sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${NOMINATIM_DB_WEB_USER}'" | grep -q 1 || sudo -u postgres createuser -SDR $NOMINATIM_DB_WEB_USER
-    [ -f "${NOMINATIM_DATA_DIR}/setup-finished.txt" ] && sudo -u postgres pg_ctl --silent stop -D $POSTGRES_DATA_DIR || echo "" #HACK
+    if [[ "x${NOMINATIM_SETUP_ENABLE}" == "xfalse" ]]; then
+      sudo -u postgres pg_ctl --silent stop -D $POSTGRES_DATA_DIR
+    fi
   fi
 }
 
@@ -166,7 +170,8 @@ function write_nominatim_local() {
       echo "Cannot continue...."
       exit 1
     fi
-
+  else
+    echo "@define('CONST_Database_DSN', 'pgsql:dbname=${NOMINATIM_POSTGRES_DB}');" >> $NOMINATIM_LOCAL_FILE
   fi
 }
 ##### END NOMINATIM CONFIG UPDATE #####
@@ -314,8 +319,9 @@ function run_nominatim_setup() {
       NOMINATIM_SETUP_OPTS=$NOMINATIM_SETUP_OPTS" --reverse-only"
     fi
     echo "Running Nominatim setup: ${NOMINATIM_BUILD_DIR}/utils/setup.php --osm-file ${NOMINATIM_PBF_IMPORT_FILE} ${NOMINATIM_SETUP_OPTS}"
+    echo "Dropping Postgres DB: ${NOMINATIM_POSTGRES_DB}"
+    sudo -u postgres psql postgres -c "DROP DATABASE IF EXISTS ${NOMINATIM_POSTGRES_DB}"
     sudo -u $NOMINATIM_SYSTEM_USER $NOMINATIM_BUILD_DIR/utils/setup.php --osm-file $NOMINATIM_PBF_IMPORT_FILE $NOMINATIM_SETUP_OPTS 2>&1 | tee $NOMINATIM_DATA_DIR/setup.log
-    grep -c "Setup finished" $NOMINATIM_DATA_DIR/setup.log | grep -q 1 && sudo -u $NOMINATIM_SYSTEM_USER touch $NOMINATIM_DATA_DIR/setup-finished.txt #HACK
     sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET fsync TO 'on'"
     sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET full_page_writes TO 'on'"
   fi
@@ -342,8 +348,7 @@ write_supervisord_conf
 
 manage_nominatim_creds
 write_nominatim_local
-#HACK - Need to find a better way to determine if setup is already done
-if [ ! -f $NOMINATIM_DATA_DIR/setup-finished.txt ]; then
+if [[ "x${NOMINATIM_SETUP_ENABLE}" == "xtrue" ]]; then
   check_nominatim_data_files
   check_nominatim_pbf_files
   set_nominatim_pbf_import_file
