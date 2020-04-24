@@ -276,7 +276,7 @@ function check_pbf_md5() {
   BPF_FILE=$2
   echo "Verifying ${BPF_FILE} MD5 sum...."
   echo "Downloading ${BPF_URL}.md5 to ${NOMINATIM_PBF_DIR}"
-  sudo -u $NOMINATIM_SYSTEM_USER curl -k -sS -L "${BPF_URL}.md5" -o "${NOMINATIM_PBF_DIR}/${BPF_FILE}.md5"
+  sudo -u $NOMINATIM_SYSTEM_USER curl -k -# -L "${BPF_URL}.md5" -o "${NOMINATIM_PBF_DIR}/${BPF_FILE}.md5"
   MD5SUM=$(cat ${NOMINATIM_PBF_DIR}/${BPF_FILE}.md5 | cut -d " " -f1)
   MD5SUM_PBF=$(md5sum ${NOMINATIM_PBF_DIR}/${BPF_FILE} | cut -d " " -f1)
   if [[ "x${MD5SUM}" == "x${MD5SUM_PBF}" ]]; then
@@ -289,10 +289,14 @@ function check_pbf_md5() {
 
 # Count PBF files and merge if more than one
 function set_nominatim_pbf_import_file() {
-  PBF_COUNT=$(ls -alh ${NOMINATIM_PBF_DIR} | grep osm.pbf | grep -v md5 | wc -l )
+  PBF_COUNT=$(ls -l ${NOMINATIM_PBF_DIR} | grep osm.pbf | grep -v md5 | wc -l )
   if [[ $PBF_COUNT -gt 1 ]]; then
-    echo "More than one PBF file found. Merging..."
-    sudo -u $NOMINATIM_SYSTEM_USER osmium cat $NOMINATIM_PBF_DIR/*.osm.pbf -o $NOMINATIM_PBF_DIR/import.osm.pbf
+    echo ""
+    echo "More than one PBF file found. Merging the below files to temp import file: ${NOMINATIM_PBF_DIR}/import.osm.pbf"
+    ls $NOMINATIM_PBF_DIR | grep osm.pbf | grep -v md5
+    echo ""
+    sudo -u $NOMINATIM_SYSTEM_USER osmium merge $NOMINATIM_PBF_DIR/*.osm.pbf -o $NOMINATIM_PBF_DIR/import.osm.pbf
+    ls -alh $NOMINATIM_PBF_DIR/
     NOMINATIM_PBF_IMPORT_FILE=$NOMINATIM_PBF_DIR/import.osm.pbf
     echo "PBF merge complete!"
   elif [[ $PBF_COUNT -eq 1 ]]; then
