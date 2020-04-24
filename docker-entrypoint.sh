@@ -120,6 +120,7 @@ function write_postgres_include_conf() {
   echo "checkpoint_completion_target = ${POSTGRES_CHECKPOINT_COMPLETION_TARGET}" >> $POSTGRES_CONF_INCLUDE_FILE
   echo "checkpoint_timeout = ${POSTGRES_CHECKPOINT_TIMEOUT}" >> $POSTGRES_CONF_INCLUDE_FILE
   echo "effective_cache_size = ${POSTGRES_EFFECTIVE_CACHE_SIZE}" >> $POSTGRES_CONF_INCLUDE_FILE
+  echo "external_pid_file = '${POSTGRES_PID_FILE}'" >> $POSTGRES_CONF_INCLUDE_FILE
   echo "maintenance_work_mem = ${POSTGRES_MAINTENANCE_WORK_MEM}" >> $POSTGRES_CONF_INCLUDE_FILE
   echo "max_wal_size = ${POSTGRES_MAX_WAL_SIZE}" >> $POSTGRES_CONF_INCLUDE_FILE
   echo "shared_buffers = ${POSTGRES_SHARED_BUFFERS}" >> $POSTGRES_CONF_INCLUDE_FILE
@@ -135,7 +136,7 @@ function manage_nominatim_creds() {
   grep -c $NOMINATIM_SYSTEM_USER /etc/passwd | grep -q 1 || adduser -S -D -u $NOMINATIM_SYSTEM_UID -G $NOMINATIM_SYSTEM_USER $NOMINATIM_SYSTEM_USER
   # If postgres is local and is mounted volume users could have changed
   if [[ "x${NOMINATIM_POSTGRES_HOST}" == "x" ]]; then
-    if [ ! -f "${SUPERVISORD_PID_FILE}" ]; then
+    if [ ! -f "${POSTGRES_PID_FILE}" ]; then
       sudo -u postgres pg_ctl --silent start -D $POSTGRES_DATA_DIR
     fi
     sudo -u postgres psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='${NOMINATIM_SYSTEM_USER}'" | grep -q 1 || sudo -u postgres createuser -s $NOMINATIM_SYSTEM_USER
