@@ -275,7 +275,7 @@ function check_pbf_md5() {
   BPF_URL=$1
   BPF_FILE=$2
   echo "Verifying ${BPF_FILE} MD5 sum...."
-  echo "Downloading ${BPF_URL}.md5 to ${NOMINATIM_PBF_DIR}.md5"
+  echo "Downloading ${BPF_URL}.md5 to ${NOMINATIM_PBF_DIR}"
   sudo -u $NOMINATIM_SYSTEM_USER curl -k -sS -L "${BPF_URL}.md5" -o "${NOMINATIM_PBF_DIR}/${BPF_FILE}.md5"
   MD5SUM=$(cat ${NOMINATIM_PBF_DIR}/${BPF_FILE}.md5 | cut -d " " -f1)
   MD5SUM_PBF=$(md5sum ${NOMINATIM_PBF_DIR}/${BPF_FILE} | cut -d " " -f1)
