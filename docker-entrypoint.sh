@@ -295,9 +295,8 @@ function set_nominatim_pbf_import_file() {
     echo "More than one PBF file found. Merging the below files to temp import file: ${NOMINATIM_PBF_DIR}/import.osm.pbf"
     ls $NOMINATIM_PBF_DIR | grep osm.pbf | grep -v md5
     echo ""
-    sudo -u $NOMINATIM_SYSTEM_USER osmium merge $NOMINATIM_PBF_DIR/*.osm.pbf -o $NOMINATIM_PBF_DIR/import.osm.pbf
-    ls -alh $NOMINATIM_PBF_DIR/
-    NOMINATIM_PBF_IMPORT_FILE=$NOMINATIM_PBF_DIR/import.osm.pbf
+    sudo -u $NOMINATIM_SYSTEM_USER osmium merge --progress --overwrite $NOMINATIM_PBF_DIR/*.osm.pbf -o $NOMINATIM_DATA_DIR/import.osm.pbf
+    NOMINATIM_PBF_IMPORT_FILE=$NOMINATIM_DATA_DIR/import.osm.pbf
     echo "PBF merge complete!"
   elif [[ $PBF_COUNT -eq 1 ]]; then
     NOMINATIM_PBF_IMPORT_FILE=$NOMINATIM_PBF_DIR/$(ls ${NOMINATIM_PBF_DIR} | grep osm.pbf | grep -v md5)
@@ -334,8 +333,8 @@ function run_nominatim_setup() {
 }
 
 function clean_nominatim_setup() {
-  if [ -f $NOMINATIM_PBF_DIR/import.osm.pbf ]; then
-    rm -rf $NOMINATIM_PBF_DIR/import.osm.pbf
+  if [ -f $NOMINATIM_DATA_DIR/import.osm.pbf ]; then
+    rm -rf $NOMINATIM_DATA_DIR/import.osm.pbf
   fi
   sudo -u postgres pg_ctl --silent stop -D $POSTGRES_DATA_DIR
 }
