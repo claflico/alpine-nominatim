@@ -224,15 +224,16 @@ function check_nominatim_pbf_files() {
   check_continent_pbf_file $NOMINATIM_PBF_EUROPE_ENABLE $NOMINATIM_PBF_EUROPE_URL
   check_continent_pbf_file $NOMINATIM_PBF_NORTH_AMERICA_ENABLE $NOMINATIM_PBF_NORTH_AMERICA_URL
   check_continent_pbf_file $NOMINATIM_PBF_SOUTH_AMERICA_ENABLE $NOMINATIM_PBF_SOUTH_AMERICA_URL
+  check_planet_pbf_file $NOMINATIM_PBF_PLANET_ENABLE $NOMINATIM_PBF_PLANET_URL
 }
 
 # Check if PDF file enabled and exists
 function check_region_pbf_file() {
-  BPF_ENABLE=$1
+  BPF_REGION_ENABLE=$1
   BPF_REGION_URL=$2
   BPF_REGION=$3
   if [[ "x${BPF_REGION}" != "x" ]]; then
-    if [[ "x${BPF_ENABLE}" != "xtrue" ]]; then
+    if [[ "x${BPF_REGION_ENABLE}" != "xtrue" ]]; then
       for REGION in $(echo $BPF_REGION | tr "," "\n")
       do
         BPF_FILE="${REGION}-latest.osm.pbf"
@@ -249,12 +250,28 @@ function check_region_pbf_file() {
 }
 
 function check_continent_pbf_file() {
-  BPF_ENABLE=$1
-  BPF_URL=$2
-  if [[ "x${BPF_ENABLE}" == "xtrue" ]]; then
-    BPF_FILE=${BPF_URL##*/}
-    if [ ! -f $NOMINATIM_PBF_DIR/$BPF_FILE ]; then
-      download_pbf_file $BPF_URL $BPF_FILE
+  BPF_CONTINENT_ENABLE=$1
+  BPF_CONTINENT_URL=$2
+  if [[ "x${BPF_CONTINENT_ENABLE}" == "xtrue" ]]; then
+    if [[ "x${NOMINATIM_PBF_PLANET_ENABLE}" != "xtrue" ]]; then
+      BPF_CONTINENT_FILE=${BPF_CONTINENT_URL##*/}
+      if [ ! -f $NOMINATIM_PBF_DIR/$BPF_CONTINENT_FILE ]; then
+        download_pbf_file $BPF_CONTINENT_URL $BPF_CONTINENT_FILE
+      fi
+    else
+      echo "ERROR: Planet PBF can't be enabled if continent is set. Cannot continue...."
+      exit 1
+    fi
+  fi
+}
+
+function check_planet_pbf_file() {
+  BPF_PLANET_ENABLE=$1
+  BPF_PLANET_URL=$2
+  if [[ "x${BPF_PLANET_ENABLE}" == "xtrue" ]]; then
+    BPF_PLANET_FILE=${BPF_PLANET_URL##*/}
+    if [ ! -f $NOMINATIM_PBF_DIR/$BPF_PLANET_FILE ]; then
+      download_pbf_file $BPF_PLANET_URL $BPF_PLANET_FILE
     fi
   fi
 }
@@ -292,7 +309,7 @@ function set_nominatim_pbf_import_file() {
   PBF_COUNT=$(ls -l ${NOMINATIM_PBF_DIR} | grep osm.pbf | grep -v md5 | wc -l )
   if [[ $PBF_COUNT -gt 1 ]]; then
     echo ""
-    echo "More than one PBF file found. Merging the below files to temp import file: ${NOMINATIM_PBF_DIR}/import.osm.pbf"
+    echo "More than one PBF file found. Merging the below files to temp import file: ${NOMINATIM_DATA_DIR}/import.osm.pbf"
     ls $NOMINATIM_PBF_DIR | grep osm.pbf | grep -v md5
     echo ""
     sudo -u $NOMINATIM_SYSTEM_USER osmium merge --progress --overwrite $NOMINATIM_PBF_DIR/*.osm.pbf -o $NOMINATIM_DATA_DIR/import.osm.pbf
