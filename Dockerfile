@@ -31,16 +31,14 @@ ENV LANG=en_US.UTF-8 \
 
 RUN set -x && \
     apk update && apk upgrade && \
-    apk add --no-cache boost ca-certificates curl libintl nginx openssl php7 php7-fpm php7-intl php7-json php7-opcache php7-openssl php7-pdo_pgsql php7-pear php7-pgsql postgis postgresql postgresql-contrib sudo supervisor tzdata && \
+    apk add --no-cache boost ca-certificates curl libintl nginx openjdk11-jre-headless openssl php7 php7-fpm php7-intl php7-json php7-opcache php7-openssl php7-pdo_pgsql php7-pear php7-pgsql postgis postgresql postgresql-contrib sudo supervisor tzdata && \
     rm -rf /var/cache/apk/* && \
     rm /etc/nginx/conf.d/default.conf && \
-    mkdir osmosis && \
-    curl -Ls https://github.com/openstreetmap/osmosis/releases/download/0.47.4/osmosis-0.47.4.tgz -o osmosis/osmosis.tar.gz && \
-    cd osmosis && tar -zxf osmosis.tar.gz && \
+    mkdir /opt/osmosis && \
+    curl -Ls https://github.com/openstreetmap/osmosis/releases/download/0.48.0/osmosis-0.48.0.tgz -o /opt/osmosis/osmosis.tar.gz && \
+    cd /opt/osmosis && tar -zxf osmosis.tar.gz && \
     rm -rf osmosis.tar.gz && \
-    mv bin/osmosis /usr/bin/ && \
-    chmod a+x /usr/bin/osmosis && \
-    cd .. && rm -rf osmosis* && \
+    cd / && ln -s /opt/osmosis/bin/osmosis /usr/bin/osmosis && \
     mkdir /etc/nginx/ssl /opt/conf && \
     echo "Set disable_coredump false" >> /etc/sudo.conf && \
     mkdir -p /run/postgresql $PGDATA && \
