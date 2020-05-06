@@ -1,6 +1,6 @@
 FROM alpine:3.11 as build
 
-ENV NOMINATIM_VERSION 3.4.1
+ENV NOMINATIM_VERSION 3.4.2
 
 WORKDIR /opt
 
@@ -53,6 +53,7 @@ WORKDIR /opt
 COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY config/*.conf /opt/conf/
 COPY docker-entrypoint.sh .
+COPY update-pbf-data.sh .
 COPY variables.sh .
 COPY --from=build /usr/bin/locale /usr/bin/locale
 COPY --from=build /usr/share/locale /usr/share/locale
