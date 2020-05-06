@@ -34,10 +34,10 @@ function update_nginx_conf() {
   sed -i 's/NGINX_STDERR_FILE/'"${NGINX_STDERR_FILE//\//\\/}"'/' $NGINX_CONF_FILE
   sed -i 's/NGINX_STDOUT_FILE/'"${NGINX_STDOUT_FILE//\//\\/}"'/' $NGINX_CONF_FILE
   sed -i 's/NGINX_KEEPALIVE_TIMEOUT/'"${NGINX_KEEPALIVE_TIMEOUT}"'/' $NGINX_CONF_FILE
-  if [ "${NGINX_HTTPS_ENABLE}" == "only" ]; then
+  if [ "x${NGINX_HTTPS_ENABLE}" == "xonly" ]; then
     cat $CONF_DIR/nginx-redirect.conf > $NGINX_DEFAULT_CONF_FILE
     cat $CONF_DIR/nginx-https.conf >> $NGINX_DEFAULT_CONF_FILE
-  elif [ "${NGINX_HTTPS_ENABLE}" == "true" ]; then
+  elif [ "x${NGINX_HTTPS_ENABLE}" == "xtrue" ]; then
     cat $CONF_DIR/nginx-http.conf > $NGINX_DEFAULT_CONF_FILE
     cat $CONF_DIR/nginx-https.conf >> $NGINX_DEFAULT_CONF_FILE
   else
@@ -50,7 +50,7 @@ function update_nginx_conf() {
   sed -i 's/PHPFPM_STATUS_PATH/'"${PHPFPM_STATUS_PATH//\//\\/}"'/' $NGINX_DEFAULT_CONF_FILE
   sed -i 's/NGINX_ROOT_DIR/'"${NGINX_ROOT_DIR//\//\\/}"'/' $NGINX_DEFAULT_CONF_FILE
   sed -i 's/NGINX_SENDFILE/'"${NGINX_SENDFILE}"'/' $NGINX_DEFAULT_CONF_FILE
-  if [ "${NGINX_HTTPS_ENABLE}" == "true" ] || [ "${NGINX_HTTPS_ENABLE}" == "only" ]; then
+  if [ "x${NGINX_HTTPS_ENABLE}" == "xtrue" ] || [ "x${NGINX_HTTPS_ENABLE}" == "xonly" ]; then
     # Create self-signed SSL certs if they don't exist
     if [ ! -f $SELF_SSL_DIR/nominatim.key ] || [ ! -f $SELF_SSL_DIR/nominatim.crt ]; then
       openssl req -new -newkey rsa:2048 -days 3650 -nodes -x509 -subj "/C=CS/ST=ST/L=Nominatim/O=Nominatim/CN=nominatim" -keyout $SELF_SSL_DIR/nominatim.key  -out $SELF_SSL_DIR/nominatim.crt
@@ -370,6 +370,14 @@ function clean_nominatim_setup() {
   sudo -u postgres pg_ctl --silent stop -D $POSTGRES_DATA_DIR
 }
 
+function config_update_schedule() {
+  if [[ "x${NOMINATIM_PBF_UPDATE_ENABLE}" == "xtrue" ]]; then
+    if [ "x${NOMINATIM_PBF_UPDATE_SCHEDULE}" == "xdaily" ] || [ "x${NOMINATIM_PBF_UPDATE_SCHEDULE}" == "xweekly" ] || [ "x${NOMINATIM_PBF_UPDATE_SCHEDULE}" == "xmonthly" ]; then
+      ln -s /opt/update-pbf-data.sh /etc/periodic/$NOMINATIM_PBF_UPDATE_SCHEDULE/update-pbf-data
+    fi
+  fi
+}
+
 #Set Timezone
 cp /usr/share/zoneinfo/$TZ /etc/localtime
 echo "${TZ}" >  /etc/timezone
@@ -392,5 +400,6 @@ if [[ "x${NOMINATIM_SETUP_ENABLE}" == "xtrue" ]]; then
   clean_nominatim_setup
 fi
 manage_nominatim_perms
+config_update_schedule
 
 exec /usr/bin/supervisord -c $SUPERVISORD_CONF_FILE
