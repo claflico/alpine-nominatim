@@ -241,6 +241,11 @@ function check_region_pbf_file() {
         if [ ! -f $NOMINATIM_PBF_DIR/$BPF_FILE ]; then
           download_pbf_file $BPF_URL $BPF_FILE
         fi
+        #Add to update list if updates enabled
+        if [[ "x${NOMINATIM_PBF_UPDATE_ENABLE}" == "xtrue" ]]; then
+          REGION_PATH=${BPF_REGION_URL##*/}
+          echo $REGION_PATH"/"$REGION >> $NOMINATIM_PBF_UPDATE_LIST_FILE
+        fi
       done
     else
       echo "ERROR: Continent PBF can't be enabled if continent region is set. Cannot continue...."
@@ -257,6 +262,11 @@ function check_continent_pbf_file() {
       BPF_CONTINENT_FILE=${BPF_CONTINENT_URL##*/}
       if [ ! -f $NOMINATIM_PBF_DIR/$BPF_CONTINENT_FILE ]; then
         download_pbf_file $BPF_CONTINENT_URL $BPF_CONTINENT_FILE
+      fi
+      #Add to update list if updates enabled
+      if [[ "x${NOMINATIM_PBF_UPDATE_ENABLE}" == "xtrue" ]]; then
+        CONTINENT=${BPF_CONTINENT_FILE%-*}
+        echo $CONTINENT >> $NOMINATIM_PBF_UPDATE_LIST_FILE
       fi
     else
       echo "ERROR: Planet PBF can't be enabled if continent is set. Cannot continue...."
