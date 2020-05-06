@@ -354,6 +354,10 @@ function run_nominatim_setup() {
     echo "Dropping Postgres DB: ${NOMINATIM_POSTGRES_DB}"
     sudo -u postgres psql postgres -c "DROP DATABASE IF EXISTS ${NOMINATIM_POSTGRES_DB}"
     sudo -u $NOMINATIM_SYSTEM_USER $NOMINATIM_BUILD_DIR/utils/setup.php --osm-file $NOMINATIM_PBF_IMPORT_FILE $NOMINATIM_SETUP_OPTS 2>&1 | tee $NOMINATIM_DATA_DIR/setup.log
+    if [[ "x${NOMINATIM_PBF_UPDATE_ENABLE}" == "xtrue" ]]; then
+      echo "Running PBF data update script."
+      sh /opt/update-pbf-data.sh 2>&1 | tee $NOMINATIM_DATA_DIR/update.log
+    fi
     sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET fsync TO 'on'"
     sudo -u postgres psql postgres -tAc "ALTER SYSTEM SET full_page_writes TO 'on'"
   fi
