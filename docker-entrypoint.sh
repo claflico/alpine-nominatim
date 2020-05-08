@@ -241,11 +241,9 @@ function check_region_pbf_file() {
         if [ ! -f $NOMINATIM_PBF_DIR/$BPF_FILE ]; then
           download_pbf_file $BPF_URL $BPF_FILE
         fi
-        #Add to update list if updates enabled
-        if [[ "x${NOMINATIM_PBF_UPDATE_ENABLE}" == "xtrue" ]]; then
-          REGION_PATH=${BPF_REGION_URL##*/}
-          echo $REGION_PATH"/"$REGION >> $NOMINATIM_PBF_UPDATE_LIST_FILE
-        fi
+        #Add to update list
+        REGION_PATH=${BPF_REGION_URL##*/}
+        echo $REGION_PATH"/"$REGION >> $NOMINATIM_PBF_UPDATE_LIST_FILE
       done
     else
       echo "ERROR: Continent PBF can't be enabled if continent region is set. Cannot continue...."
@@ -263,11 +261,9 @@ function check_continent_pbf_file() {
       if [ ! -f $NOMINATIM_PBF_DIR/$BPF_CONTINENT_FILE ]; then
         download_pbf_file $BPF_CONTINENT_URL $BPF_CONTINENT_FILE
       fi
-      #Add to update list if updates enabled
-      if [[ "x${NOMINATIM_PBF_UPDATE_ENABLE}" == "xtrue" ]]; then
-        CONTINENT=${BPF_CONTINENT_FILE%-*}
-        echo $CONTINENT >> $NOMINATIM_PBF_UPDATE_LIST_FILE
-      fi
+      #Add to update list
+      CONTINENT=${BPF_CONTINENT_FILE%-*}
+      echo $CONTINENT >> $NOMINATIM_PBF_UPDATE_LIST_FILE
     else
       echo "ERROR: Planet PBF can't be enabled if continent is set. Cannot continue...."
       exit 1
@@ -370,11 +366,9 @@ function clean_nominatim_setup() {
   sudo -u postgres pg_ctl --silent stop -D $POSTGRES_DATA_DIR
 }
 
-function config_update_schedule() {
-  if [[ "x${NOMINATIM_PBF_UPDATE_ENABLE}" == "xtrue" ]]; then
-    if [ "x${NOMINATIM_PBF_UPDATE_SCHEDULE}" == "xdaily" ] || [ "x${NOMINATIM_PBF_UPDATE_SCHEDULE}" == "xweekly" ] || [ "x${NOMINATIM_PBF_UPDATE_SCHEDULE}" == "xmonthly" ]; then
-      ln -s /opt/update-pbf-data.sh /etc/periodic/$NOMINATIM_PBF_UPDATE_SCHEDULE/update-pbf-data
-    fi
+function config_pbf_update_schedule() {
+  if [ "x${NOMINATIM_PBF_UPDATE_SCHEDULE}" == "xdaily" ] || [ "x${NOMINATIM_PBF_UPDATE_SCHEDULE}" == "xweekly" ] || [ "x${NOMINATIM_PBF_UPDATE_SCHEDULE}" == "xmonthly" ]; then
+    ln -s /opt/update-pbf-data.sh /etc/periodic/$NOMINATIM_PBF_UPDATE_SCHEDULE/update-pbf-data
   fi
 }
 
@@ -400,6 +394,8 @@ if [[ "x${NOMINATIM_SETUP_ENABLE}" == "xtrue" ]]; then
   clean_nominatim_setup
 fi
 manage_nominatim_perms
-config_update_schedule
+if [[ "x${NOMINATIM_PBF_UPDATE_ENABLE}" == "xtrue" ]]; then
+  config_pbf_update_schedule
+fi
 
 exec /usr/bin/supervisord -c $SUPERVISORD_CONF_FILE
