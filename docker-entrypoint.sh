@@ -157,7 +157,7 @@ function write_nominatim_local() {
   echo "@define('CONST_Postgis_Version', '${NOMINATIM_POSTGIS_VERSION}');" >> $NOMINATIM_LOCAL_FILE
   echo "@define('CONST_Website_BaseURL', '${NOMINATIM_WEBSITE_BASEURL}');" >> $NOMINATIM_LOCAL_FILE
   echo "@define('CONST_Database_Web_User', '${NOMINATIM_DB_WEB_USER}');" >> $NOMINATIM_LOCAL_FILE
-  echo "@define('CONST_Import_Style', CONST_BasePath.'/settings/${NOMINATIM_IMPORT_STYLE}');" >> $NOMINATIM_LOCAL_FILE
+  echo "@define('CONST_Import_Style', CONST_BasePath.'/settings/${NOMINATIM_IMPORT_STYLE}.style');" >> $NOMINATIM_LOCAL_FILE
 #  if [[ "x${NOMINATIM_FLATNODE_ENABLE}" == "xtrue" ]]; then
 #    echo "@define('CONST_Osm2pgsql_Flatnode_File', '${NOMINATIM_FLATNODE_FILE}');" >> $NOMINATIM_LOCAL_FILE
 #  fi
