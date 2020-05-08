@@ -11,14 +11,20 @@ docker build -t claflico/alpine-nominatim:<version> .
 
 ## Versions
 
-- `3.4.2-0` [(Dockerfile)](https://github.com/claflico/alpine-nominatim/blob/3.4.2-0/Dockerfile)
+- `3.4.2-0` [(Dockerfile)](https://github.com/claflico/alpine-nominatim/blob/master/Dockerfile)
 
 ## Instructions
 
 1. Launch a container with mounted volumes (/opt/nominatim/data & /var/lib/postgresql/data) and environment variables `NOMINATIM_SETUP_ENABLE=true` and `NOMINATIM_PBF_(PLANET|CONTINENT|_ENABLE=true`
-2. Wait for initial download & import of PBF file (this can take a day or more depending upon PBF file).
-3. Shutdown container and relaunch with NOMINATIM_SETUP_ENABLE=false.
-
+  ```
+  docker run -d --shm-size=1g -p 80:80 -p 443:443 -v $(pwd)/nominatim-data:/opt/nominatim/data -v $(pwd)/postgres-data:/var/lib/postgresql/data -e NOMINATIM_SETUP_ENABLE=true -e NOMINATIM_PBF_NORTH_AMERICA_ENABLE=true claflico/alpine-nominatim
+  ```
+2. Wait for initial download & import of PBF file (this can take more than a day depending upon PBF file). Nginx will NOT be running during this this time.
+3. Shutdown container and relaunch without NOMINATIM_SETUP_ENABLE. The `NOMINATIM_PBF_(PLANET|CONTINENT|_ENABLE=true` env variable(s) must still be present for automatic PBF updates to work.
+  ```
+  docker run -d --shm-size=1g -p 80:80 -p 443:443 -v $(pwd)/nominatim-data:/opt/nominatim/data -v $(pwd)/postgres-data:/var/lib/postgresql/data -e NOMINATIM_PBF_NORTH_AMERICA_ENABLE=true claflico/alpine-nominatim
+  ```
+  
 ## Configuration
 
 The image runs with default or recommended configurations but can be highly customized through env variables.
@@ -140,8 +146,13 @@ You need to provide `nominatim.key` AND `nominatim.crt` files in that directory 
 | `POSTGRES_SYNCHRONOUS_COMMIT="off"`           | Nominatim install docs suggests off                                                           |
 | `POSTGRES_WORK_MEM="50MB"`                    | Nominatim install docs suggests 50MB                                                          |
 
+## WARNINGS
+
+- Depending upon the size of import file you might get the following postgresql error during import: "could not resize shared memory segment". You can resolve this by adding `--shm-size=1g` to your run command or adding a tempfs volume in your docker-compose.yml file. See example in repo.
+
 ## TODO
 
 - Test connectivity to external postgresql database server.
 - Add Planet PDF update capability.
 - Resolve Nominatim Flatnode_File issue.
+- Verify scheduled updates actually run.
