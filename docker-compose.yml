@@ -1,0 +1,64 @@
+version: '3.7'
+volumes:
+  nominatim-data:
+    driver: local
+  postgres-data:
+    driver: local
+  sslcerts-data:
+    driver: local
+services:
+  server:
+    image: claflico/alpine-nominatim:latest
+    environment:
+      NGINX_HTTPS_ENABLE: 'only'
+      NGINX_SSL_CRT_FILE: '/opt/sslcerts/nominatim.crt'
+      NGINX_SSL_KEY_FILE: '/opt/sslcerts/nominatim.key'
+      NOMINATIM_IMPORT_STYLE: 'import-address'
+      NOMINATIM_OSM2PGSQL_CACHE: '8000'
+      NOMINATIM_PBF_ASIA_REGION: 'gcc-states'
+      NOMINATIM_PBF_AUSTRALIA_OCEANIA_REGION: 'australia'
+      NOMINATIM_PBF_NORTH_AMERICA_ENABLE: 'true'
+      NOMINATIM_PBF_UPDATE_ENABLE: 'false'
+      NOMINATIM_SETUP_ENABLE: 'true'
+      NOMINATIM_SETUP_OPTS: '--verbose '
+      POSTGRES_MAX_WAL_SIZE: '3GB'
+    volumes:
+    - nominatim-data:/opt/nominatim/data
+    - postgres-data:/var/lib/postgresql/data
+    - sslcerts-data:/opt/sslcerts
+    - type: tmpfs #Required when importing large PBF files due to crashing when postgresql tries to increase swap
+      target: /dev/shm
+      tmpfs:
+        size: 8000000000
+    tmpfs:
+    - /dev/shm
+    ports:
+    - 80:80/tcp
+    - 443:443/tcp
+    depends_on:
+      - sslcerts
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 32000
+        hard: 40000
+  sslcerts:
+    image: private-repo/sslcerts:2020.04.15
+    deploy:
+      restart_policy:
+        condition: none
+    volumes:
+    - sslcerts-data:/sslcerts:z
+networks:
+  default:
+    driver: overlay
+    ipam:
+      driver: default
+      config:
+      - subnet:  10.42.0.1/16
