@@ -64,6 +64,19 @@ You need to provide `nominatim.key` AND `nominatim.crt` files in that directory 
 | `PHPFPM_PROCESS_MANAGER="ondemand"`    | Choose how the process manager will control the number of child processes. Possible values: <code>static&vert;ondemand&vert;dynamic</code>                      |
 | `PHPFPM_STATUS_PATH="/fpm-status"`     | The URI to view the FPM status page. Also used in nginx configuration.                                                                                          |
 
+### Postgresql Configuration
+
+|                                               |                                                                                               |
+|-----------------------------------------------|-----------------------------------------------------------------------------------------------|
+| `POSTGRES_AUTOVACUUM_WORK_MEM="2GB"`          | Nominatim install docs suggests 2GB                                                           |
+| `POSTGRES_CHECKPOINT_COMPLETION_TARGET="0.9"` | Nominatim install docs suggests 0.9, postgresql suggests maximum of 0.9                       |
+| `POSTGRES_CHECKPOINT_TIMEOUT="10min"`         | Nominatim install docs suggests 10min                                                         |
+| `POSTGRES_EFFECTIVE_CACHE_SIZE="8GB"`         | Nominatim install docs suggests 24GB, postgresql suggests 50% of total memory                 |
+| `POSTGRES_MAINTENANCE_WORK_MEM="10GB"`        | Nominatim install docs suggests 10GB, postgresql suggests 2X or more than `POSTGRES_WORK_MEM` |
+| `POSTGRES_MAX_WAL_SIZE="1GB"`                 | Nominatim install docs suggests 1GB                                                           |
+| `POSTGRES_SHARED_BUFFERS="2GB"`               | Nominatim install docs suggests 2GB, postgresql suggests 25% of total memory                  |
+| `POSTGRES_SYNCHRONOUS_COMMIT="off"`           | Nominatim install docs suggests off                                                           |
+| `POSTGRES_WORK_MEM="50MB"`                    | Nominatim install docs suggests 50MB                                                          |
 
 ## TODO
 
