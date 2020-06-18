@@ -2,7 +2,7 @@
 CONF_DIR="/opt/conf"
 CPU_COUNT=$(grep -c ^processor /proc/cpuinfo)
 SELF_SSL_DIR="/etc/nginx/ssl"
-TZ=${TZ:-"US/Central"}
+TZ=${TZ:-"UTC"}
 
 NGINX_CONF_FILE=${NGINX_CONF_FILE:-"/etc/nginx/nginx.conf"}
 NGINX_DEFAULT_CONF_FILE=${NGINX_DEFAULT_CONF_FILE:-"/etc/nginx/conf.d/default.conf"}

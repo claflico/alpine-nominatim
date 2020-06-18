@@ -11,7 +11,7 @@ docker build -t claflico/alpine-nominatim:<version> .
 
 ## Versions
 
-- `3.4.2-0` [(Dockerfile)](https://github.com/claflico/alpine-nominatim/blob/master/Dockerfile)
+- `3.5.0-0` [(Dockerfile)](https://github.com/claflico/alpine-nominatim/blob/master/Dockerfile)
 
 ## Instructions
 
@@ -152,7 +152,7 @@ You need to provide `nominatim.key` AND `nominatim.crt` files in that directory 
 
 ## TODO
 
-- Test connectivity to external postgresql database server.
+- Get connectivity to external postgresql database server working.
 - Add Planet PDF update capability.
 - Resolve Nominatim Flatnode_File issue.
 - Verify scheduled updates actually run.
