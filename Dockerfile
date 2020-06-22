@@ -1,4 +1,4 @@
-FROM alpine:3.11 as build
+FROM alpine:3.12 as build
 
 ENV NOMINATIM_VERSION 3.5.0
 
@@ -23,7 +23,7 @@ RUN set -x && \
     cd /opt/nominatim && \
     rm -rf .git* .travis.yml *.md *agrant* ChangeLog osm2pgsql
 
-FROM alpine:3.11
+FROM alpine:3.12
 
 ENV LANG=en_US.UTF-8 \
     PGDATA=/var/lib/postgresql/data \
@@ -31,7 +31,7 @@ ENV LANG=en_US.UTF-8 \
 
 RUN set -x && \
     apk update && apk upgrade && \
-    apk add --no-cache boost ca-certificates curl libintl nginx openjdk11-jre-headless openssl php7 php7-fpm php7-intl php7-json php7-opcache php7-openssl php7-pdo_pgsql php7-pear php7-pgsql postgis postgresql postgresql-contrib sudo supervisor tzdata && \
+    apk add --no-cache boost ca-certificates curl libintl nginx openjdk11-jre-headless openssl php7 php7-fpm php7-intl php7-json php7-opcache php7-openssl php7-pdo_pgsql php7-pear php7-pgsql postgis postgresql postgresql-contrib py3-psycopg2 sudo supervisor tzdata && \
     rm -rf /var/cache/apk/* && \
     rm /etc/nginx/conf.d/default.conf && \
     mkdir /opt/osmosis && \
@@ -44,7 +44,7 @@ RUN set -x && \
     mkdir -p /run/postgresql $PGDATA && \
     chown -R postgres:postgres /run/postgresql $PGDATA
 
-COPY --from=claflico/alpine-osmium:1.11.1 \
+COPY --from=claflico/alpine-osmium:1.12.0 \
      /usr/local/bin/osmium \
      /usr/bin/
 
